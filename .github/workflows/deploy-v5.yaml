@@ -18,50 +18,45 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1. 下載你目前儲存庫的所有檔案（暫存到舊目錄）
       - name: Checkout User Repository
         uses: actions/checkout@v4
         with:
           path: old-repo
 
-      # 2. 安裝 Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # 3. 下載 100% 全新、純淨、沒有任何怨氣的官方 Quartz 5 核心
       - name: Clone Fresh Official Quartz
         run: git clone https://github.com/jackyzha0/quartz.git fresh-quartz
 
-      # 4. 【核心大絕招】大風吹！把所有壞掉的舊程式碼在虛擬機裡物理蒸發，只把你的純筆記移進去
       - name: Assemble Perfect Clean Project
         run: |
-          # 建立一個完全乾淨的工作區資料夾
           mkdir final-workspace
-          
-          # 把官方最完美的程式碼全部移入工作區
           cp -r fresh-quartz/* final-workspace/
           [ -d fresh-quartz/.github ] && cp -r fresh-quartz/.github final-workspace/ || true
           
-          # 強制刪除官方預設的範例筆記
           rm -rf final-workspace/content
-          
-          # 【關鍵】只把你的純筆記（content）複製進去，其他舊的程式碼一概丟棄！
           cp -r old-repo/content final-workspace/content
           
-          # 如果你有自訂設定檔，才複製過去（沒有就用官方預設）
+          # 🚀【震盪清洗大絕招】強制挖出並炸毀任何藏在 content 筆記夾內部的冒牌程式碼！
+          rm -rf final-workspace/content/quartz
+          rm -rf final-workspace/content/components
+          rm -rf final-workspace/content/plugins
+          rm -rf final-workspace/content/.quartz
+          rm -rf final-workspace/content/.quartz-cache
+          find final-workspace/content -name "Head.tsx" -delete
+          
           [ -f old-repo/quartz.config.yaml ] && cp old-repo/quartz.config.yaml final-workspace/quartz.config.yaml || true
           [ -f old-repo/quartz.layout.yaml ] && cp old-repo/quartz.layout.yaml final-workspace/quartz.layout.yaml || true
 
-      # 5. 在完全封閉且無污染的 final-workspace 裡執行標準編譯
       - name: Build Quartz Site
         run: |
           cd final-workspace
           npm ci
           npx quartz build
 
-      # 6. 打包上傳
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
