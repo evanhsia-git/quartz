@@ -18,37 +18,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout User Repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: user-repo
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Clone Fresh Official Quartz v5
-        run: git clone https://github.com/jackyzha0/quartz.git pristine-quartz
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Overwrite with User Index Page
-        run: |
-          rm -rf pristine-quartz/content
-          mkdir -p pristine-quartz/content
-          cp user-repo/content/index.md pristine-quartz/content/index.md
-          cp -r user-repo/content/* pristine-quartz/content/ 2>/dev/null || true
-          find pristine-quartz/content -type f -name "*.md" -exec sed -i '/CustomOgImages/d' {} +
-
-      - name: Build Pure Quartz Site
-        run: |
-          cd pristine-quartz
-          npm ci
-          npx quartz build
+      - name: Build Quartz
+        run: npx quartz build
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: pristine-quartz/public
+          path: public
 
   deploy:
     needs: build
