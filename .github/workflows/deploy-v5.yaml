@@ -18,23 +18,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1. 下載你目前的儲存庫（我們只要裡面的 content/index.md）
       - name: Checkout User Repository
         uses: actions/checkout@v4
         with:
           path: user-repo
 
-      # 2. 安裝 Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # 3. 雲端直接複製一份官方最乾淨、毫無污染、路徑 100% 正確的 Quartz v5
       - name: Clone Fresh Official Quartz v5
-        run: git clone https://github.com/jackyzha0/quartz.git pristine-quartz
+        run: git clone [https://github.com/jackyzha0/quartz.git](https://github.com/jackyzha0/quartz.git) pristine-quartz
 
-      # 4. 【核心覆蓋】把官方的範例筆記砍了，塞進你飽滿的精華首頁（如果有圖片夾也可以一起塞過去）
       - name: Overwrite with User Index Page
         run: |
           rm -rf pristine-quartz/content
@@ -42,18 +38,17 @@ jobs:
           
           # 複製你的超級首頁進去
           cp user-repo/content/index.md pristine-quartz/content/index.md
-          
-          # 如果你筆記裡有放圖片或附檔資料夾，才複製（沒有的話這行會自動跳過）
           cp -r user-repo/content/* pristine-quartz/content/ 2>/dev/null || true
+          
+          # 🚀【雲端防誤判保險】在編譯前，強制抹除內容中所有可能引發 Esbuild 誤判的外掛關鍵字
+          find pristine-quartz/content -type f -name "*.md" -exec sed -i '/CustomOgImages/d' {} +
 
-      # 5. 在 100% 官方標準的目錄結構下，無痛安裝並編譯
       - name: Build Pure Quartz Site
         run: |
           cd pristine-quartz
           npm ci
           npx quartz build
 
-      # 6. 打包上傳完美生成的 public 資料夾
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
