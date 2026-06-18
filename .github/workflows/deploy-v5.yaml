@@ -18,87 +18,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout User Repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          path: old-repo
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Clone Fresh Official Quartz
-        run: git clone https://github.com/jackyzha0/quartz.git fresh-quartz
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Assemble Perfect Clean Project
-        run: |
-          mkdir final-workspace
-          cp -r fresh-quartz/* final-workspace/
-          [ -d fresh-quartz/.github ] && cp -r fresh-quartz/.github final-workspace/ || true
-          
-          rm -rf final-workspace/content
-          cp -r old-repo/content final-workspace/content
-          
-          [ -f old-repo/quartz.config.yaml ] && cp old-repo/quartz.config.yaml final-workspace/quartz.config.yaml || true
-          [ -f old-repo/quartz.layout.yaml ] && cp old-repo/quartz.layout.yaml final-workspace/quartz.layout.yaml || true
-
-      # 🚀【完美植入手術】不再用 sed 刪行，直接強行覆蓋一份 100% 語法正確、帶有所有欄位圖片核心的標準官方 Head.tsx！
-      - name: Overwrite with Pristine Head.tsx
-        run: |
-          cat << "EOF" > final-workspace/quartz/components/Head.tsx
-          import { i18n } from "../util/i18n"
-          import { FullSlug, joinSegments, pathToRoot } from "../util/path"
-          import { QuartzComponent, QuartzComponentConstructor, QuartzComponentProps } from "./types"
-
-          export const customFormatDescription = (description: string, maxLen: number): string => {
-            if (description.length <= maxLen) return description
-            return description.substring(0, maxLen) + "..."
-          }
-
-          const Head: QuartzComponent = ({ cfg, fileData, externalResources }: QuartzComponentProps) => {
-            const title = fileData.frontmatter?.title ?? i18n(cfg.locale).propertyDefaults.title
-            const description = fileData.description ?? i18n(cfg.locale).propertyDefaults.description
-            const { css, js } = externalResources
-
-            const url = new URL(`https://${cfg.baseUrl ?? "example.com"}`)
-            const path = url.pathname as FullSlug
-            const baseDir = fileData.slug ? pathToRoot(fileData.slug) : ""
-
-            return (
-              <head>
-                <title>{title}</title>
-                <meta charSet="utf-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <meta name="description" content={description} />
-                <meta property="og:title" content={title} />
-                <meta property="og:description" content={description} />
-                <meta { ...{ "data-accent": cfg.theme.colors.lightMode.accent } } />
-                {css.map((href) => (
-                  <link key={href} rel="stylesheet" href={href} type="text/css" sparse="true" />
-                ))}
-                {js
-                  .filter((resource) => resource.loadTime === "beforeDOMReady")
-                  .map((resource) => {
-                    return <script key={resource.src} src={resource.src} type={resource.contentType ?? "text/javascript"} />
-                  })}
-              </head>
-            )
-          }
-
-          export default (() => Head) satisfies QuartzComponentConstructor
-          EOF
-
-      - name: Build Quartz Site
-        run: |
-          cd final-workspace
-          npm ci
-          npx quartz build
+      - name: Build Quartz
+        run: npx quartz build
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: final-workspace/public
+          path: public
 
   deploy:
     needs: build
