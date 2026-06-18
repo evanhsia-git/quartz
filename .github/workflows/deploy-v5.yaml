@@ -29,18 +29,14 @@ jobs:
           node-version: 22
 
       - name: Clone Fresh Official Quartz v5
-        run: git clone [https://github.com/jackyzha0/quartz.git](https://github.com/jackyzha0/quartz.git) pristine-quartz
+        run: git clone https://github.com/jackyzha0/quartz.git pristine-quartz
 
       - name: Overwrite with User Index Page
         run: |
           rm -rf pristine-quartz/content
           mkdir -p pristine-quartz/content
-          
-          # 複製你的超級首頁進去
           cp user-repo/content/index.md pristine-quartz/content/index.md
           cp -r user-repo/content/* pristine-quartz/content/ 2>/dev/null || true
-          
-          # 🚀【雲端防誤判保險】在編譯前，強制抹除內容中所有可能引發 Esbuild 誤判的外掛關鍵字
           find pristine-quartz/content -type f -name "*.md" -exec sed -i '/CustomOgImages/d' {} +
 
       - name: Build Pure Quartz Site
