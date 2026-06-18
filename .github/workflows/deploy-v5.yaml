@@ -40,16 +40,23 @@ jobs:
           rm -rf final-workspace/content
           cp -r old-repo/content final-workspace/content
           
-          # 🚀【震盪清洗大絕招】強制挖出並炸毀任何藏在 content 筆記夾內部的冒牌程式碼！
-          rm -rf final-workspace/content/quartz
-          rm -rf final-workspace/content/components
-          rm -rf final-workspace/content/plugins
-          rm -rf final-workspace/content/.quartz
-          rm -rf final-workspace/content/.quartz-cache
-          find final-workspace/content -name "Head.tsx" -delete
-          
           [ -f old-repo/quartz.config.yaml ] && cp old-repo/quartz.config.yaml final-workspace/quartz.config.yaml || true
           [ -f old-repo/quartz.layout.yaml ] && cp old-repo/quartz.layout.yaml final-workspace/quartz.layout.yaml || true
+
+      # 🚀【終極手術】不管快取如何作怪，在編譯前一秒，強制刪除 Head.tsx 裡面任何包含 CustomOgImages 的行！
+      - name: Emergency Laser Surgery on Head.tsx
+        run: |
+          TARGET_HEAD="final-workspace/quartz/components/Head.tsx"
+          if [ -f "$TARGET_HEAD" ]; then
+            echo "Before surgery:"
+            grep -n "CustomOgImages" "$TARGET_HEAD" || echo "No pollution found in fresh file"
+            
+            # 使用 sed 刪除包含關鍵字的整行程式碼
+            sed -i '/CustomOgImages/d' "$TARGET_HEAD"
+            
+            echo "After surgery:"
+            grep -n "CustomOgImages" "$TARGET_HEAD" || echo "Purification successful! Line eliminated."
+          fi
 
       - name: Build Quartz Site
         run: |
