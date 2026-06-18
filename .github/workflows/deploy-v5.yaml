@@ -18,36 +18,54 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 1. 下載你目前儲存庫的所有檔案（暫存到舊目錄）
       - name: Checkout User Repository
         uses: actions/checkout@v4
         with:
-          path: user-repo
+          path: old-repo
 
+      # 2. 安裝 Node.js
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
+      # 3. 下載 100% 全新、純淨、沒有任何怨氣的官方 Quartz 5 核心
       - name: Clone Fresh Official Quartz
-        run: git clone https://github.com/jackyzha0/quartz.git official-quartz
+        run: git clone https://github.com/jackyzha0/quartz.git fresh-quartz
 
-      - name: Sync Content and Configurations
+      # 4. 【核心大絕招】大風吹！把所有壞掉的舊程式碼在虛擬機裡物理蒸發，只把你的純筆記移進去
+      - name: Assemble Perfect Clean Project
         run: |
-          rm -rf official-quartz/content
-          cp -r user-repo/content official-quartz/content
-          [ -f user-repo/quartz.config.yaml ] && cp user-repo/quartz.config.yaml official-quartz/quartz.config.yaml || true
-          [ -f user-repo/quartz.layout.yaml ] && cp user-repo/quartz.layout.yaml official-quartz/quartz.layout.yaml || true
+          # 建立一個完全乾淨的工作區資料夾
+          mkdir final-workspace
+          
+          # 把官方最完美的程式碼全部移入工作區
+          cp -r fresh-quartz/* final-workspace/
+          [ -d fresh-quartz/.github ] && cp -r fresh-quartz/.github final-workspace/ || true
+          
+          # 強制刪除官方預設的範例筆記
+          rm -rf final-workspace/content
+          
+          # 【關鍵】只把你的純筆記（content）複製進去，其他舊的程式碼一概丟棄！
+          cp -r old-repo/content final-workspace/content
+          
+          # 如果你有自訂設定檔，才複製過去（沒有就用官方預設）
+          [ -f old-repo/quartz.config.yaml ] && cp old-repo/quartz.config.yaml final-workspace/quartz.config.yaml || true
+          [ -f old-repo/quartz.layout.yaml ] && cp old-repo/quartz.layout.yaml final-workspace/quartz.layout.yaml || true
 
+      # 5. 在完全封閉且無污染的 final-workspace 裡執行標準編譯
       - name: Build Quartz Site
         run: |
-          cd official-quartz
+          cd final-workspace
           npm ci
           npx quartz build
 
+      # 6. 打包上傳
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: official-quartz/public
+          path: final-workspace/public
 
   deploy:
     needs: build
