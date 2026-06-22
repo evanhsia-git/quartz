@@ -232,6 +232,46 @@ summary: "2026-06-01 Daily Task Summary - Executed hermes-system-backup skill, c
 
 ---
 
+## 正式流程圖
+
+```
+Obsidian Vault（知識庫）
+      │
+      │  rsync -a --delete
+      │  排除：.git/ .obsidian/ .env *.db Environment Keys.md .trash/ store
+      ▼
+Quartz/content（實體資料夾）
+      │
+      │  git add -A → commit "Robust Sync: $DATE" → push origin v5
+      ▼
+GitHub Repo（evanhsia-git/quartz, branch v5）
+      │
+      │  GitHub Actions 自動觸發
+      │  ├─ Checkout repository
+      │  ├─ Setup Node.js 22
+      │  ├─ npm ci（安裝依賴）
+      │  ├─ npx quartz plugin install（生成 .quartz/ 快取）
+      │  ├─ npx quartz build（生成 public/）
+      │  └─ actions/deploy-pages@v4
+      ▼
+GitHub Pages（https://evanhsia-git.github.io/quartz/）
+```
+
+### 腳本位置
+
+| 腳本 | 路徑 | 觸發方式 |
+|------|------|----------|
+| 編排入口 | `/root/.hermes/scripts/user-backup.sh` | cron daily 05:00 UTC+8 |
+| Quartz 同步 | `/root/.hermes/scripts/robust_sync_to_quartz.sh` | user-backup.sh 階段二 |
+| 安全掃描 | 內建在 robust_sync_to_quartz.sh | 每次 rsync 後 |
+| 部署監控 | 內建在 robust_sync_to_quartz.sh | push 後 poll Actions |
+
+### 遷移歷史
+
+- **2026-06-18**: Quartz 初始化，content 為實體資料夾
+- **2026-06-19**: 改為 symlink 架構（git 不追蹤 Vault 內容）
+- **2026-06-22**: 遷回實體資料夾架構（rsync + git push）
+
 ## 相關頁面
 
 - [[schema]]
