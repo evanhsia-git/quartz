@@ -10,4 +10,3 @@ worker.ts
 *.log
 database/
 ivan-notes/
-content_symlink_*
