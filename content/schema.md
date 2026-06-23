@@ -54,10 +54,29 @@ read("log.md", last=30)
 完成後：
 
 ```text
-[1/4] schema ✓
-[2/4] policy ✓
-[3/4] INDEX ✓
-[4/4] LOG ✓
+[1/4] ✅ SCHEMA | [2/4] ✅ index | [3/4] ✅ log → 導航完成
+```
+
+同一工作階段僅執行一次。
+
+## Navigation Enforcement（強制機制）
+
+**禁止跳過導航**，除非用戶明確說「跳過導航」。
+
+Agent 必須在首次任務開始前完成導航序列，並在對話中明確回報導航完成標記。
+
+**繞過防護**：
+- Agent 不得因「記憶中已有導航內容」而跳過
+- Agent 不得因「任務簡單」而跳過
+- Agent 不得因「時間緊迫」而跳過
+- 唯一例外：用戶明確說「跳過導航」
+
+**驗證方式**：Agent 必須在對話中輸出導航完成標記，格式為：
+```
+[1/3] ✅ SCHEMA | [2/3] ✅ index | [3/3] ✅ log → 導航完成
+```
+
+未輸出此標記 = 未完成導航 = 不得執行任何任務。
 ```
 
 同一工作階段僅執行一次。
@@ -387,6 +406,26 @@ summary: 2026-06-01 Summary：- Executed `skill-name`: completed task
 **修正**：
 ```yaml
 summary: "2026-06-01 Summary - Executed skill-name, completed task"
+```
+
+---
+
+### 2b. Summary 值含逗號後接空格+小寫字母（Quartz YAML 解析問題）
+
+**錯誤**：
+```yaml
+summary: "2026-06-01 Summary - Executed skill-name, completed backup of Hermes configuration"
+```
+
+**原因**：Quartz 使用的 YAML parser 會將 `, completed backup...` 誤判為新的 mapping entry（`key: value` 格式），導致 `bad indentation of a mapping entry` 錯誤。
+
+**規則**：
+- summary 值應避免逗號後接空格+小寫字母的結構
+- 若需要逗號，改用全形逗號 `，` 或精簡內容
+
+**修正**：
+```yaml
+summary: "2026-06-01 Summary - Executed skill-name, completed backup"
 ```
 
 ---
