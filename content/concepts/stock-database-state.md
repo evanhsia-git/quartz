@@ -6,12 +6,12 @@ summary: "Stock-Database-State：相關頁面"
 created: 2026-05-31
 updated: 2026-05-31
 type: concept
-tags: []
+tags: [database]
 ---
 
 ## 相關頁面
-- [[concepts/twse-api-mapping|TWSE API 映射]]
-- [[concepts/stock-automation-config|股票自動化配置]]
+- TWSE API 映射
+- 股票自動化配置
 
 
 # 股票量化資料庫狀態 (2026-05-28)
@@ -49,11 +49,11 @@ summary: "Stock-Automation-Config：相關頁面"
 created: 2026-05-31
 updated: 2026-05-31
 type: concept
-tags: []
+tags: [database]
 ---
 
 ## 相關頁面
-- [[concepts/twse-api-mapping|TWSE API 映射]]
+- TWSE API 映射
 - [[concepts/stock-database-state|股票資料庫狀態]]
 
 

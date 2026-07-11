@@ -6,8 +6,7 @@ summary: "FRED (Federal Reserve Economic Data) 指南"
 type: concept
 status: active
 
-tags: []
-
+tags: [finance]
 created: 2026-06-16
 updated: 2026-06-16
 
@@ -131,4 +130,4 @@ print("\n報告已成功儲存為 fred_stock_report.csv")
 ---
 ## 相關節點
 - [[us-cpi-analysis]]
-- [[us-gdp-analysis]]
+- us-gdp-analysis
