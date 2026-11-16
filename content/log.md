@@ -1029,3 +1029,59 @@ Ivan 指示「做第一項」：讓未來分割／減資**還沒發生就先知�
 解法：`git checkout --ours data/stocks.json`（取遠端版）→ **本地重跑 sanitize＋compute_indicators 決定性重建**
 → `GIT_EDITOR=true git rebase --continue`。驗證 30→31 筆、既有欄位零差異、無資料遺失。
 ## [2026-11-15 21:00:17] lint | 0 dir_perm_fixed, 14 file_perm_fixed | 2 missing_fields | 1 orphans | 133 stale_pages
+## [2026-11-16 01:54:45] lint | 0 dir_perm_fixed, 11 file_perm_fixed, 0 group_fixed | 2 missing_fields | 1 orphans | 133 stale_pages
+## [2026-11-16 01:55:54] lint | 2 missing_fields | 1 orphans | 133 stale_pages
+## [2026-11-16 02:20:51] lint | 1 orphans | 133 stale_pages
+## [2026-11-16 02:20:52] lint | 1 orphans | 133 stale_pages
+## [2026-11-16 02:22:27] lint | 1 orphans | 133 stale_pages
+## [2026-11-16 02:37:32] lint | 0 dir_perm_fixed, 1 file_perm_fixed, 0 group_fixed | 2 orphans | 133 stale_pages
+
+
+## [2026-11-16 02:30] Vault 權限與缺欄位問題：治本（A+B1）
+
+Ivan 問「撰寫 WIKI 時經常出現權限與缺欄位問題，未來能不能避免」→ 根因兩個，都治本了。
+
+### 根因 1：目錄缺 setgid，而 lint 每天把 setgid 拔掉
+- Vault 根有 setgid（drwxrwsr-x），但 **343 個子目錄全部沒有** → Agent 以 root 新建的檔案
+  群組變 root，www-data 落到 other 只有 r-- → WebDAV 無法 PUT/DELETE。
+- `obsidian-lint.py` 的 `DIR_PERM_MODE = 0o775` **不含 setgid** → 每天 lint 把 s 位清掉；
+  且權限迴圈只 `chmod`、**從不 chgrp** → 修的是 mode、壞的是 group，警告天天重現。
+
+**修法（已完成）**：全 Vault `chgrp -R www-data`（849 項）＋ 所有目錄 `chmod g+s`（343 個，缺 0）
+＋ lint 改 `0o2775` ＋ 迴圈補 `p.chown(-1, gid)`（群組取 Vault 根）。
+驗證：lint 二次跑「權限（含 setgid 與 www-data 群組）均正確」；以 root 新建檔自動得 `root:www-data`。
+
+### 根因 2：新增頁面沒帶 frontmatter（lint 必填 7 欄）
+本次的「缺失欄位 2 處」就是我新增的 `resources/corporate-actions.md`、`resources/etf-splits.md`。
+
+**修法（已完成）**：新增 `/root/.hermes/scripts/vault_new_page.py`
+- `--new`（自動組 frontmatter＋權限＋自我驗證）、`--fix`（只補不覆蓋）、`--touch`（只更新 updated）
+- type 依資料夾推斷；tags 讀 `system/frontmatter-rules.md` 白名單，非白名單拒絕寫入
+- 21 項單元測試（含實測抓到的兩個 bug：`tags: [etf]` 字串被逐字元驗證、標題誤取 code fence 內的 shell 註解）
+- 兩個問題頁面已用它補齊；維基警告由 3 → 1（殘 1 為「過期頁面 133 個」既有清單）
+
+### 新增規範頁
+`system/vault-write-rules.md`（type: schema），並加入 `system/system-index.md` 索引。
+## [2026-11-16 02:55:39] lint | 0 dir_perm_fixed, 11 file_perm_fixed, 0 group_fixed | 1 orphans | 133 stale_pages
+## [2026-11-16 02:55:39] lint | 1 orphans | 133 stale_pages
+## [2026-11-16 03:44:57] lint | 0 dir_perm_fixed, 5 file_perm_fixed, 0 group_fixed | 1 orphans | 133 stale_pages
+## [2026-11-16 08:38:43] lint | 133 stale_pages
+
+
+## [2026-11-16 13:30] Hermes Agent 更新 v0.22.5 → v0.23.1（含 OOM 根因處置）
+
+- 執行 `hermes update`（Ivan 指示）。程式碼 944799ab → **3b42157858 = v0.23.1**
+- ⚠️ **根因：桌機版（Electron）打包階段 OOM**——VPS 只有 1.9 GB RAM、swap 495 MB，
+  Node 打包峰值撐不住（dmesg: Memory cgroup out of memory, node-MainThread）。
+  這也是 11-07 那次更新中斷的原因。
+- **處置（Ivan 確認不需要桌機版）**：`hermes uninstall --gui --yes`
+  → 移除 apps/desktop/{dist,release,node_modules}（343 MB；dist 是 6/27 舊產物、gitignored；
+  userdata 從未存在 ＝ 桌機版從未使用）。之後更新改用 `--yes --no-gateway-restart` 續完，
+  **跳過桌機版建置、秒完成**。
+- 驗證：v0.23.1、`hermes update --check` 不再回報 unfinished、config 無重複頂層鍵
+  （_config_version 52→53）、自訂 auxiliary.vision 保留、bundle skills 同步 5 個。
+- **尚待：gateway 需重啟**才能載入新版（本次刻意用 --no-gateway-restart 以免打斷對話；
+  重啟無法從 gateway 內部執行，須由 Ivan 在 Telegram 打 /restart）。
+- 備份：`/root/backups/hermes-update-20261116_1217/`（config.yaml + .env）
+- 註：更新未動到自訂 skill（obsidian-lint／obsidian-wiki／vault_new_page.py 三處修改均在）。
+## [2026-11-16 21:00:17] lint | 0 dir_perm_fixed, 9 file_perm_fixed, 0 group_fixed | 133 stale_pages
